@@ -1,3 +1,5 @@
+include(CMakePackageConfigHelpers)
+
 project(pugixml)
 
 cmake_minimum_required(VERSION 2.8.12)
@@ -42,12 +44,29 @@ else()
 	add_library(pugixml STATIC ${SOURCES})
 endif()
 
+# Set version
+#
+# To update the version:
+#		1. Change the major, minor and patch below
+#   2. Change the mahor, minor and patch in pugixml.hpp
+#
+set(PUGIXML_VERSION_MAJOR "1")
+set(PUGIXML_VERSION_MINOR "8")
+set(PUGIXML_VERSION_PATCH "2")
+
+set(PUGIXML_VERSION "${PUGIXML_VERSION_MAJOR}.${PUGIXML_VERSION_MINOR}.${PUGIXML_VERSION_PATCH}")
+set(PUGIXML_VERSION_SOVERSION "${PUGIXML_VERSION_MAJOR}")
+
+set(version_file "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/pugixml/pugixml-config-version.cmake")
+write_basic_package_version_file(${version_file} VERSION ${PUGIXML_VERSION} COMPATIBILITY AnyNewerVersion)
+install(FILES ${version_file} DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pugixml)
+
 # Enable C++11 long long for compilers that are capable of it
 if(NOT ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} STRLESS 3.1 AND ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_long_long_type;")
 	target_compile_features(pugixml PUBLIC cxx_long_long_type)
 endif()
 
-set_target_properties(pugixml PROPERTIES VERSION 1.8 SOVERSION 1)
+set_target_properties(pugixml PROPERTIES VERSION ${PUGIXML_VERSION} SOVERSION ${PUGIXML_VERSION_SOVERSION})
 get_target_property(PUGIXML_VERSION_STRING pugixml VERSION)
 
 if(BUILD_PKGCONFIG)
