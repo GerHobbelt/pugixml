@@ -47,7 +47,7 @@ endif()
 # Set version
 #
 # To update the version:
-#		1. Change the major, minor and patch below
+#	  1. Change the major, minor and patch below
 #   2. Change the mahor, minor and patch in pugixml.hpp
 #
 set(PUGIXML_VERSION_MAJOR "1")
