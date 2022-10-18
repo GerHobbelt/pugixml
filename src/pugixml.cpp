@@ -4128,7 +4128,7 @@ PUGI__NS_BEGIN
 				}
 				else
 				{
-					if ((flags & format_raw) == 0)
+					if (((flags & format_raw) == 0) && ((flags & format_no_whitespace_before_closing_slash) == 0))
 						writer.write(' ');
 
 					writer.write('/', '>');
