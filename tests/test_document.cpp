@@ -1,7 +1,15 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
+#ifndef _SCL_SECURE_NO_WARNINGS
 #define _SCL_SECURE_NO_WARNINGS
+#endif
+#ifndef _SCL_SECURE_NO_DEPRECATE
 #define _SCL_SECURE_NO_DEPRECATE
-#define _CRT_NONSTDC_NO_DEPRECATE 0
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE 
+#define _CRT_NONSTDC_NO_DEPRECATE 
+#endif
 
 #include <string.h> // because Borland's STL is braindead, we have to include <string.h> _before_ <string> in order to get memcpy
 

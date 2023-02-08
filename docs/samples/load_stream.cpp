@@ -9,7 +9,7 @@ void print_doc(const char* message, const pugi::xml_document& doc, const pugi::x
     std::cout
         << message
         << "\t: load result '" << result.description() << "'"
-        << ", first character of root name: U+" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << pugi::as_wide(doc.first_child().name())[0]
+        << ", first character of root name: U+" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << pugi::as_utf8(pugi::as_wide(doc.first_child().name()))[0]
         << ", year: " << doc.first_child().first_child().first_child().child_value()
         << std::endl;
 }
