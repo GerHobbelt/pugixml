@@ -1578,8 +1578,8 @@ PUGI_IMPL_NS_BEGIN
 
 		static value_type high(value_type result, uint32_t ch)
 		{
-			uint32_t msh = static_cast<uint32_t>(ch - 0x10000) >> 10;
-			uint32_t lsh = static_cast<uint32_t>(ch - 0x10000) & 0x3ff;
+			uint32_t msh = (ch - 0x10000U) >> 10;
+			uint32_t lsh = (ch - 0x10000U) & 0x3ff;
 
 			result[0] = static_cast<uint16_t>(0xD800 + msh);
 			result[1] = static_cast<uint16_t>(0xDC00 + lsh);
@@ -2459,7 +2459,7 @@ PUGI_IMPL_NS_BEGIN
 			{
 				// Move [old_gap_end, new_gap_start) to [old_gap_start, ...)
 				assert(s >= end);
-				memmove(end - size, end, reinterpret_cast<char*>(s) - reinterpret_cast<char*>(end));
+				memmove(end - size, end, (s - end) * sizeof(char_t));
 			}
 
 			s += count; // end of current gap
@@ -2476,7 +2476,7 @@ PUGI_IMPL_NS_BEGIN
 			{
 				// Move [old_gap_end, current_pos) to [old_gap_start, ...)
 				assert(s >= end);
-				memmove(end - size, end, reinterpret_cast<char*>(s) - reinterpret_cast<char*>(end));
+				memmove(end - size, end, (s - end) * sizeof(char_t));
 
 				return s - size;
 			}
@@ -5351,7 +5351,7 @@ namespace pugi
 
 	PUGI_IMPL_FN size_t xml_attribute::hash_value() const
 	{
-		return static_cast<size_t>(reinterpret_cast<uintptr_t>(_attr) / sizeof(xml_attribute_struct));
+		return reinterpret_cast<uintptr_t>(_attr) / sizeof(xml_attribute_struct);
 	}
 
 	PUGI_IMPL_FN xml_attribute_struct* xml_attribute::internal_object() const
@@ -6535,7 +6535,7 @@ namespace pugi
 
 	PUGI_IMPL_FN size_t xml_node::hash_value() const
 	{
-		return static_cast<size_t>(reinterpret_cast<uintptr_t>(_root) / sizeof(xml_node_struct));
+		return reinterpret_cast<uintptr_t>(_root) / sizeof(xml_node_struct);
 	}
 
 	PUGI_IMPL_FN xml_node_struct* xml_node::internal_object() const
@@ -6940,7 +6940,7 @@ namespace pugi
 	PUGI_IMPL_FN xml_node* xml_node_iterator::operator->() const
 	{
 		assert(_wrap._root);
-		return const_cast<xml_node*>(&_wrap); // BCC5 workaround
+		return &_wrap;
 	}
 
 	PUGI_IMPL_FN xml_node_iterator& xml_node_iterator::operator++()
@@ -7001,7 +7001,7 @@ namespace pugi
 	PUGI_IMPL_FN xml_attribute* xml_attribute_iterator::operator->() const
 	{
 		assert(_wrap._attr);
-		return const_cast<xml_attribute*>(&_wrap); // BCC5 workaround
+		return &_wrap;
 	}
 
 	PUGI_IMPL_FN xml_attribute_iterator& xml_attribute_iterator::operator++()
@@ -7062,7 +7062,7 @@ namespace pugi
 	PUGI_IMPL_FN xml_node* xml_named_node_iterator::operator->() const
 	{
 		assert(_wrap._root);
-		return const_cast<xml_node*>(&_wrap); // BCC5 workaround
+		return &_wrap;
 	}
 
 	PUGI_IMPL_FN xml_named_node_iterator& xml_named_node_iterator::operator++()
