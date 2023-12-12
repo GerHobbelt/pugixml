@@ -8447,7 +8447,7 @@ PUGI_IMPL_NS_BEGIN
 			return PUGIXML_TEXT("0");
 
 		default:
-			return 0;
+			return NULL;
 		}
 	#else
 		// fallback
@@ -12360,7 +12360,7 @@ PUGI_IMPL_NS_BEGIN
 		if (impl->root->rettype() != xpath_type_node_set)
 		{
 		#ifdef PUGIXML_NO_EXCEPTIONS
-			return 0;
+			return NULL;
 		#else
 			xpath_parse_result res;
 			res.error = "Expression does not evaluate to node set";
