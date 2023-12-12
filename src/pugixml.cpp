@@ -266,7 +266,7 @@ PUGI_IMPL_NS_BEGIN
 	PUGI_IMPL_FN bool strequalrange(const char_t* lhs, const char_t* rhs, size_t count)
 	{
 		for (size_t i = 0; i < count; ++i)
-			if (lhs[i] != rhs[i])
+			if (lhs[i] == 0 || lhs[i] != rhs[i])
 				return false;
 
 		return lhs[count] == 0;
