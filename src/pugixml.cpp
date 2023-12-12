@@ -22,6 +22,9 @@
 #include <assert.h>
 #include <limits.h>
 
+#include <algorithm>
+#include <iterator>
+
 #ifdef PUGIXML_WCHAR_MODE
 #	include <wchar.h>
 #endif
@@ -34,6 +37,7 @@
 #ifndef PUGIXML_NO_STL
 #	include <istream>
 #	include <ostream>
+#	include <sstream>
 #	include <string>
 #endif
 
@@ -8728,6 +8732,120 @@ PUGI_IMPL_NS_BEGIN
 		return (value >= -0.5 && value <= 0) ? ceil(value) : floor(value + 0.5);
 	}
 
+	PUGI_IMPL_FN char_t* to_titlecase(char_t* buffer)
+	{
+		char_t* write = buffer;
+		static char_t last = ' ';
+		static char_t symbols[] = {'!', '@', '#', '$', '%', '^', '&', '*', '/', '\\', '<', '>', ',', ';' , '{', '}', '|', '[', ']', '-', '_', '+', '=', '(', ')', ' '};
+		static size_t size = sizeof(symbols) / sizeof(symbols[0]);
+		for (char_t* it = buffer; *it; )
+		{
+			char_t ch = *it++;
+			bool upper_maybe = false;
+			for (size_t i = 0; i < size; i += 1) {
+				if (symbols[i] == last) {
+					upper_maybe = true;
+					break;
+				}
+			}
+			if (::isalpha(ch) && upper_maybe)
+			{
+				*write++ = static_cast<char_t>(::toupper(ch));
+			}
+			else *write++ = static_cast<char_t>(::tolower(ch));
+
+			last = ch;
+		}
+
+		last = ' ';
+
+		// zero-terminate
+		*write = 0;
+
+		return write;
+	}
+
+	PUGI_IMPL_FN char_t* to_lowercase(char_t* buffer)
+	{
+		char_t* write = buffer;
+
+		for (char_t* it = buffer; *it; )
+		{
+			char_t ch = *it++;
+			*write++ = static_cast<char_t>(::tolower(ch));
+		}
+
+		// zero-terminate
+		*write = 0;
+
+		return write;
+	}
+
+	PUGI_IMPL_FN char_t* to_uppercase(char_t* buffer)
+	{
+		char_t* write = buffer;
+
+		for (char_t* it = buffer; *it; )
+		{
+			char_t ch = *it++;
+			*write++ = static_cast<char_t>(::toupper(ch));
+		}
+
+		// zero-terminate
+		*write = 0;
+
+		return write;
+	}
+
+	PUGI_IMPL_FN char_t* to_camelcase(char_t* buffer)
+	{
+		char_t* write = buffer;
+		static bool shouldUpper = false;
+
+		for (char_t* it = buffer; *it; )
+		{
+			char_t ch = *it++;
+			if (::isalpha(ch))
+			{
+				if (shouldUpper) {
+					*write++ = static_cast<char_t>(::toupper(ch));
+					shouldUpper = false;
+				} else {
+					*write++ = static_cast<char_t>(::tolower(ch));
+				}
+
+			} else if (ch == ' ') {
+				shouldUpper = true;
+			}
+		}
+
+		// zero-terminate
+		*write = 0;
+
+		return write;
+	}
+
+	PUGI_IMPL_FN char_t* to_snakecase(char_t* buffer)
+	{
+		char_t* write = buffer;
+
+		for (char_t* it = buffer; *it; )
+		{
+			char_t ch = *it++;
+			if (::isalpha(ch))
+			{
+				*write++ = static_cast<char_t>(::tolower(ch));
+			} else if (ch == ' ') {
+				*write++ = '_';
+			}
+		}
+
+		// zero-terminate
+		*write = 0;
+
+		return write;
+	}
+
 	PUGI_IMPL_FN const char_t* qualified_name(const xpath_node& node)
 	{
 		return node.attribute() ? node.attribute().name() : node.node().name();
@@ -9745,6 +9863,15 @@ PUGI_IMPL_NS_BEGIN
 		ast_func_floor,					// floor(left)
 		ast_func_ceiling,				// ceiling(left)
 		ast_func_round,					// round(left)
+		ast_func_title_case,			// title-case(left)
+		ast_func_lower_case,			// lower-case(left)
+		ast_func_upper_case,			// upper-case(left)
+		ast_func_camel_case,			// camel-case(left)
+		ast_func_snake_case,			// snake-case(left)
+		ast_func_string_join_1,			// string-join(left)
+		ast_func_string_join_2,			// string-join(left, right),
+		ast_func_raw_0,					// raw()
+		ast_func_raw_1,					// raw(left)
 		ast_step,						// process set left with step
 		ast_step_root,					// select root node
 
@@ -11139,6 +11266,196 @@ PUGI_IMPL_NS_BEGIN
 				break;
 			}
 
+			case ast_func_title_case:
+			{
+				xpath_string s = _left->eval_string(c, stack);
+
+				char_t* begin = s.data(stack.result);
+				if (!begin) return xpath_string();
+
+				char_t* end = to_titlecase(begin);
+
+				return xpath_string::from_heap_preallocated(begin, end);
+			}
+
+			case ast_func_lower_case:
+			{
+				xpath_string s = _left->eval_string(c, stack);
+
+				char_t* begin = s.data(stack.result);
+				if (!begin) return xpath_string();
+
+				char_t* end = to_lowercase(begin);
+
+				return xpath_string::from_heap_preallocated(begin, end);
+			}
+
+			case ast_func_upper_case:
+			{
+				xpath_string s = _left->eval_string(c, stack);
+
+				char_t* begin = s.data(stack.result);
+				if (!begin) return xpath_string();
+
+				char_t* end = to_uppercase(begin);
+
+				return xpath_string::from_heap_preallocated(begin, end);
+			}
+
+			case ast_func_camel_case:
+			{
+				xpath_string s = _left->eval_string(c, stack);
+
+				char_t* begin = s.data(stack.result);
+				if (!begin) return xpath_string();
+
+				char_t* end = to_camelcase(begin);
+
+				return xpath_string::from_heap_preallocated(begin, end);
+			}
+
+			case ast_func_snake_case:
+			{
+				xpath_string s = _left->eval_string(c, stack);
+
+				char_t* begin = s.data(stack.result);
+				if (!begin) return xpath_string();
+
+				char_t* end = to_snakecase(begin);
+
+				return xpath_string::from_heap_preallocated(begin, end);
+			}
+
+			case ast_func_string_join_1:
+			{
+				xpath_allocator_capture cr(stack.result);
+				xpath_string out;
+
+				xpath_node_set_raw ns = _left->eval_node_set(c, stack, nodeset_eval_all);
+				for (const xpath_node* it = ns.begin(); it != ns.end(); ++it)
+				{
+					xpath_allocator_capture cri(stack.result);
+					xpath_string s = string_value(*it, stack.result);
+					out.append(s, stack.result);
+				}
+
+				return out;
+			}
+
+			case ast_func_string_join_2:
+			{
+				xpath_allocator_capture cr(stack.result);
+				xpath_string out;
+
+				xpath_node_set_raw ns = _left->eval_node_set(c, stack, nodeset_eval_all);
+				xpath_string delimeter = _right->eval_string(c, stack);
+				for (const xpath_node* it = ns.begin(); it != ns.end();)
+				{
+					xpath_allocator_capture cri(stack.result);
+					xpath_string s = string_value(*it, stack.result);
+					out.append(s, stack.result);
+
+					if (++it != ns.end()) {
+						out.append(delimeter, stack.result);
+					}
+				}
+
+				return out;
+			}
+
+			case ast_func_raw_0:
+			{
+				xpath_node na = c.n;
+				xml_node n = na.node();
+				switch (n.type())
+				{
+					case node_pcdata:
+					case node_cdata:
+					case node_comment:
+					case node_pi:
+						return xpath_string::from_const(n.value());
+
+					case node_document:
+					case node_element:
+					{
+						#ifndef PUGIXML_WCHAR_MODE
+							std::stringstream ss;
+							n.print(ss);
+							std::string str = ss.str();
+							return xpath_string::from_heap(str.c_str(), str.c_str() + str.size(), stack.result);
+						#else
+							std::wstringstream ss;
+							n.print(ss);
+							std::wstring str = ss.str();
+							return xpath_string::from_heap(str.c_str(), str.c_str() + str.size(), stack.result);
+						#endif
+					}
+
+					default:
+						return xpath_string();
+				}
+			}
+
+			case ast_func_raw_1:
+			{
+				xpath_allocator_capture cr(stack.result);
+				xpath_node_set_raw ns = _left->eval_node_set(c, stack, nodeset_eval_first);
+				xpath_node na = ns.first();
+				xml_node n = na.node();
+
+				switch (n.type())
+				{
+					case node_pcdata:
+					case node_cdata:
+					case node_comment:
+					case node_pi:
+						return xpath_string::from_const(n.value());
+
+					case node_document:
+					case node_element:
+					{
+						#ifndef PUGIXML_WCHAR_MODE
+							std::stringstream ss;
+							n.print(ss);
+							std::string str = ss.str();
+							return xpath_string::from_heap(str.c_str(), str.c_str() + str.size(), stack.result);
+						#else
+							std::wstringstream ss;
+							n.print(ss);
+							std::wstring str = ss.str();
+							return xpath_string::from_heap(str.c_str(), str.c_str() + str.size(), stack.result);
+						#endif
+					}
+
+					default:
+						return xpath_string();
+				}
+			}
+
+			// fallthrough
+			default:
+				;
+			}
+
+			// none of the ast types that return the value directly matched, we need to perform type conversion
+			switch (_rettype)
+			{
+			case xpath_type_boolean:
+				return xpath_string::from_const(eval_boolean(c, stack) ? PUGIXML_TEXT("true") : PUGIXML_TEXT("false"));
+
+			case xpath_type_number:
+				return convert_number_to_string(eval_number(c, stack), stack.result);
+
+			case xpath_type_node_set:
+			{
+				xpath_allocator_capture cr(stack.temp);
+
+				xpath_stack swapped_stack = {stack.temp, stack.result};
+
+				xpath_node_set_raw ns = eval_node_set(c, swapped_stack, nodeset_eval_first);
+				return ns.empty() ? xpath_string() : string_value(ns.first(), stack.result);
+			}
+
 			default:
 				;
 			}
@@ -11554,7 +11871,8 @@ PUGI_IMPL_NS_BEGIN
 					return alloc_node(ast_func_concat, xpath_type_string, args[0], args[1]);
 				else if (name == PUGIXML_TEXT("ceiling") && argc == 1)
 					return alloc_node(ast_func_ceiling, xpath_type_number, args[0]);
-
+				else if (name == PUGIXML_TEXT("camel-case") && argc == 1)
+					return alloc_node(ast_func_camel_case, xpath_type_string, args[0]);
 				break;
 
 			case 'f':
@@ -11581,6 +11899,8 @@ PUGI_IMPL_NS_BEGIN
 					if (argc == 1 && args[0]->rettype() != xpath_type_node_set) return error("Function has to be applied to node set");
 					return alloc_node(argc == 0 ? ast_func_local_name_0 : ast_func_local_name_1, xpath_type_string, args[0]);
 				}
+				else if (name == PUGIXML_TEXT("lower-case") && argc == 1)
+					return alloc_node(ast_func_lower_case, xpath_type_string, args[0]);
 
 				break;
 
@@ -11613,6 +11933,10 @@ PUGI_IMPL_NS_BEGIN
 			case 'r':
 				if (name == PUGIXML_TEXT("round") && argc == 1)
 					return alloc_node(ast_func_round, xpath_type_number, args[0]);
+				if (name == PUGIXML_TEXT("raw") && argc <= 1)
+				{
+					return alloc_node(argc == 0 ? ast_func_raw_0 : ast_func_raw_1, xpath_type_string, args[0]);
+				}
 
 				break;
 
@@ -11634,7 +11958,12 @@ PUGI_IMPL_NS_BEGIN
 					if (args[0]->rettype() != xpath_type_node_set) return error("Function has to be applied to node set");
 					return alloc_node(ast_func_sum, xpath_type_number, args[0]);
 				}
-
+				else if (name == PUGIXML_TEXT("snake-case") && argc == 1)
+					return alloc_node(ast_func_snake_case, xpath_type_string, args[0]);
+				else if (name == PUGIXML_TEXT("string-join") && argc == 1)
+					return alloc_node(ast_func_string_join_1, xpath_type_string, args[0]);
+				else if (name == PUGIXML_TEXT("string-join") && argc == 2)
+					return alloc_node(ast_func_string_join_2, xpath_type_string, args[0], args[1]);
 				break;
 
 			case 't':
@@ -11642,6 +11971,13 @@ PUGI_IMPL_NS_BEGIN
 					return alloc_node(ast_func_translate, xpath_type_string, args[0], args[1]);
 				else if (name == PUGIXML_TEXT("true") && argc == 0)
 					return alloc_node(ast_func_true, xpath_type_boolean);
+				else if (name == PUGIXML_TEXT("title-case") && argc == 1)
+					return alloc_node(ast_func_title_case, xpath_type_string, args[0]);
+				break;
+
+			case 'u':
+				if (name == PUGIXML_TEXT("upper-case") && argc == 1)
+					return alloc_node(ast_func_upper_case, xpath_type_string, args[0]);
 
 				break;
 
