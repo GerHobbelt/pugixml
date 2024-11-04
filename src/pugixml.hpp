@@ -399,7 +399,7 @@ namespace pugi
 		bool operator<=(const xml_attribute& r) const;
 		bool operator>=(const xml_attribute& r) const;
 
-		// Check if attribute is empty
+		// Check if attribute is empty (null)
 		bool empty() const;
 
 		// Get attribute name/value, or "" if attribute is empty
@@ -510,7 +510,7 @@ namespace pugi
 		bool operator<=(const xml_node& r) const;
 		bool operator>=(const xml_node& r) const;
 
-		// Check if node is empty.
+		// Check if node is empty (null)
 		bool empty() const;
 
 		// Get node type
@@ -771,7 +771,7 @@ namespace pugi
 		// Borland C++ workaround
 		bool operator!() const;
 
-		// Check if text object is empty
+		// Check if text object is empty (null)
 		bool empty() const;
 
 		// Get text, or "" if object is empty
