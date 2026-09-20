@@ -631,6 +631,12 @@ namespace pugi
 		xml_attribute insert_attribute_before(string_view_t name, const xml_attribute& attr);
 	#endif
 
+		// Get attribute with specified name, adding one if it does not exist. Returns the existing or added attribute, or empty attribute on errors.
+		xml_attribute ensure_attribute(const char_t* name);
+	#ifdef PUGIXML_HAS_STRING_VIEW
+		xml_attribute ensure_attribute(string_view_t name);
+	#endif
+
 		// Add a copy of the specified attribute. Returns added attribute, or empty attribute on errors.
 		xml_attribute append_copy(const xml_attribute& proto);
 		xml_attribute prepend_copy(const xml_attribute& proto);
@@ -654,6 +660,12 @@ namespace pugi
 		xml_node prepend_child(string_view_t name);
 		xml_node insert_child_after(string_view_t name, const xml_node& node);
 		xml_node insert_child_before(string_view_t name, const xml_node& node);
+	#endif
+
+		// Get child with specified name, adding one if it does not exist. Returns the existing or added node, or empty node on errors.
+		xml_node ensure_child(const char_t* name);
+	#ifdef PUGIXML_HAS_STRING_VIEW
+		xml_node ensure_child(string_view_t name);
 	#endif
 
 		// Add a copy of the specified node as a child. Returns added node, or empty node on errors.

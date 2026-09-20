@@ -4864,7 +4864,12 @@ PUGI_IMPL_NS_BEGIN
 		auto_deleter<void> contents_guard(own ? contents : NULL, xml_memory::deallocate);
 
 		// early-out for empty documents to avoid buffer allocation overhead
-		if (size == 0) return make_parse_result((options & parse_fragment) ? status_ok : status_no_document_element);
+		if (size == 0)
+		{
+			xml_parse_result result = make_parse_result((options & parse_fragment) ? status_ok : status_no_document_element);
+			result.encoding = buffer_encoding;
+			return result;
+		}
 
 		// get private buffer
 		char_t* buffer = NULL;
@@ -6310,6 +6315,22 @@ namespace pugi
 	}
 #endif
 
+	PUGI_IMPL_FN xml_attribute xml_node::ensure_attribute(const char_t* name_)
+	{
+		xml_attribute result = attribute(name_);
+
+		return result ? result : append_attribute(name_);
+	}
+
+#ifdef PUGIXML_HAS_STRING_VIEW
+	PUGI_IMPL_FN xml_attribute xml_node::ensure_attribute(string_view_t name_)
+	{
+		xml_attribute result = attribute(name_);
+
+		return result ? result : append_attribute(name_);
+	}
+#endif
+
 	PUGI_IMPL_FN xml_attribute xml_node::append_copy(const xml_attribute& proto)
 	{
 		if (!proto) return xml_attribute();
@@ -6531,6 +6552,22 @@ namespace pugi
 		result.set_name(name_);
 
 		return result;
+	}
+#endif
+
+	PUGI_IMPL_FN xml_node xml_node::ensure_child(const char_t* name_)
+	{
+		xml_node result = child(name_);
+
+		return result ? result : append_child(name_);
+	}
+
+#ifdef PUGIXML_HAS_STRING_VIEW
+	PUGI_IMPL_FN xml_node xml_node::ensure_child(string_view_t name_)
+	{
+		xml_node result = child(name_);
+
+		return result ? result : append_child(name_);
 	}
 #endif
 
