@@ -1,5 +1,5 @@
 /**
- * pugixml parser - version 1.15
+ * pugixml parser - version 1.16
  * --------------------------------------------------------
  * Report bugs and download new versions at https://pugixml.org/
  *
@@ -2018,7 +2018,7 @@ PUGI_IMPL_NS_BEGIN
 	#define PUGI_IMPL_SCANCHARTYPE(ct) do { while (offset < size && PUGI_IMPL_IS_CHARTYPE(data[offset], ct)) offset++; } while (0)
 
 		// check if we have a non-empty XML declaration
-		if (size < 6 || !((data[0] == '<') & (data[1] == '?') & (data[2] == 'x') & (data[3] == 'm') & (data[4] == 'l') && PUGI_IMPL_IS_CHARTYPE(data[5], ct_space)))
+		if (size < 6 || !(((data[0] == '<') & (data[1] == '?') & (data[2] == 'x') & (data[3] == 'm') & (data[4] == 'l')) && PUGI_IMPL_IS_CHARTYPE(data[5], ct_space)))
 			return false;
 
 		// scan XML declaration until the encoding field

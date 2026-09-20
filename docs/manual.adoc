@@ -1377,7 +1377,7 @@ include::samples/modify_base.cpp[tags=attr]
 [[modify.add]]
 === Adding nodes/attributes
 
-[[xml_node::prepend_attribute]][[xml_node::append_attribute]][[xml_node::insert_attribute_after]][[xml_node::insert_attribute_before]][[xml_node::prepend_child]][[xml_node::append_child]][[xml_node::insert_child_after]][[xml_node::insert_child_before]]
+[[xml_node::prepend_attribute]][[xml_node::append_attribute]][[xml_node::insert_attribute_after]][[xml_node::insert_attribute_before]][[xml_node::ensure_attribute]][[xml_node::prepend_child]][[xml_node::append_child]][[xml_node::insert_child_after]][[xml_node::insert_child_before]][[xml_node::ensure_child]]
 Nodes and attributes do not exist without a document tree, so you can't create them without adding them to some document. A node or attribute can be created at the end of node/attribute list or before/after some other node:
 
 [source]
@@ -1404,9 +1404,14 @@ xml_node xml_node::insert_child_after(const char_t* name, const xml_node& node);
 xml_node xml_node::insert_child_after(string_view_t name, const xml_node& node);
 xml_node xml_node::insert_child_before(const char_t* name, const xml_node& node);
 xml_node xml_node::insert_child_before(string_view_t name, const xml_node& node);
+
+xml_attribute xml_node::ensure_attribute(const char_t* name);
+xml_attribute xml_node::ensure_attribute(string_view_t name);
+xml_node xml_node::ensure_child(const char_t* name);
+xml_node xml_node::ensure_child(string_view_t name);
 ----
 
-`append_attribute` and `append_child` create a new node/attribute at the end of the corresponding list of the node the method is called on; `prepend_attribute` and `prepend_child` create a new node/attribute at the beginning of the list; `insert_attribute_after`, `insert_attribute_before`, `insert_child_after` and `insert_child_before` add the node/attribute before or after the specified node/attribute.
+`append_attribute` and `append_child` create a new node/attribute at the end of the corresponding list of the node the method is called on; `prepend_attribute` and `prepend_child` create a new node/attribute at the beginning of the list; `insert_attribute_after`, `insert_attribute_before`, `insert_child_after` and `insert_child_before` add the node/attribute before or after the specified node/attribute. `ensure_attribute` and `ensure_child` return the existing attribute/child with the specified name, appending a new one only if no such attribute/child exists; this makes it convenient to write code like `node.ensure_attribute("id") = 123;`.
 
 Attribute functions create an attribute with the specified name; you can specify the empty name and change the name later if you want to. Node functions with the `type` argument create the node with the specified type; since node type can't be changed, you have to know the desired type beforehand. Also note that not all types can be added as children; see below for clarification. Node functions with the `name` argument create the element node (<<node_element,node_element>>) with the specified name.
 
@@ -1422,7 +1427,7 @@ All functions return the handle to the created object on success, and null handl
 
 Even if the operation fails, the document remains in consistent state, but the requested node/attribute is not added.
 
-CAUTION: `attribute()` and `child()` functions do not add attributes or nodes to the tree, so code like `node.attribute("id") = 123;` will not do anything if `node` does not have an attribute with name `"id"`. Make sure you're operating with existing attributes/nodes by adding them if necessary.
+CAUTION: `attribute()` and `child()` functions do not add attributes or nodes to the tree, so code like `node.attribute("id") = 123;` will not do anything if `node` does not have an attribute with name `"id"`. Make sure you're operating with existing attributes/nodes by adding them if necessary, or use `ensure_attribute`/`ensure_child`.
 
 This is an example of adding new attributes/nodes to the document (link:samples/modify_add.cpp[]):
 
@@ -2208,6 +2213,7 @@ Anniversary release (pugixml turns 20 this year!). Changes:
 
 * Improvements:
     . `PUGIXML_CHARCONV_FLOAT` option can be enabled to switch floating point conversions to `<charconv>`; this requires C{plus}{plus}17, makes the conversions locale-independent and can improve performance
+    . Add `xml_node::ensure_child` and `xml_node::ensure_attribute` that return the child/attribute with the specified name, adding one if it does not exist
     . Improve performance of searching for nodes and attributes by name
     . Loading a document from an empty buffer no longer performs memory allocations
 
@@ -3078,6 +3084,11 @@ const unsigned int +++<a href="#parse_wnorm_attribute">parse_wnorm_attribute</a>
     xml_node +++<a href="#xml_node::insert_child_after">insert_child_after</a>+++(string_view_t name, const xml_node& node);
     xml_node +++<a href="#xml_node::insert_child_before">insert_child_before</a>+++(const char_t* name, const xml_node& node);
     xml_node +++<a href="#xml_node::insert_child_before">insert_child_before</a>+++(string_view_t name, const xml_node& node);
+
+    xml_attribute +++<a href="#xml_node::ensure_attribute">ensure_attribute</a>+++(const char_t* name);
+    xml_attribute +++<a href="#xml_node::ensure_attribute">ensure_attribute</a>+++(string_view_t name);
+    xml_node +++<a href="#xml_node::ensure_child">ensure_child</a>+++(const char_t* name);
+    xml_node +++<a href="#xml_node::ensure_child">ensure_child</a>+++(string_view_t name);
 
     xml_attribute +++<a href="#xml_node::append_copy">append_copy</a>+++(const xml_attribute& proto);
     xml_attribute +++<a href="#xml_node::prepend_copy">prepend_copy</a>+++(const xml_attribute& proto);
