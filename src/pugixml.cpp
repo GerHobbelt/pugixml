@@ -260,9 +260,9 @@ PUGI_IMPL_NS_BEGIN
 		assert(src && dst);
 
 	#ifdef PUGIXML_WCHAR_MODE
-		return wcscmp(src, dst) == 0;
+		return *src == *dst && wcscmp(src, dst) == 0;
 	#else
-		return strcmp(src, dst) == 0;
+		return *src == *dst && strcmp(src, dst) == 0;
 	#endif
 	}
 
@@ -7843,7 +7843,7 @@ namespace pugi
 		}
 
 		// reset other document
-		new (other) impl::xml_document_struct(PUGI_IMPL_GETPAGE(other));
+		new (other) impl::xml_document_struct(other_page);
 		rhs._buffer = NULL;
 	}
 #endif
