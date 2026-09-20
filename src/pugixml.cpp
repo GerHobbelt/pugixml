@@ -39,6 +39,10 @@
 #	include <string>
 #endif
 
+#ifdef PUGIXML_CHARCONV_FLOAT
+#	include <charconv>
+#endif
+
 // For placement new
 #include <new>
 
@@ -4714,6 +4718,15 @@ PUGI_IMPL_NS_BEGIN
 	{
 	#ifdef PUGIXML_WCHAR_MODE
 		return wcstod(value, NULL);
+	#elif defined(PUGIXML_CHARCONV_FLOAT)
+		while (PUGI_IMPL_IS_CHARTYPE(*value, ct_space))
+			value++;
+		if (*value == '+')
+			value++;
+		// return code is intentionally ignored to let libc++/MSVC STL correctly handle underflow/overflow
+		double result = 0.0;
+		std::from_chars(value, value + strlen(value), result);
+		return result;
 	#else
 		return strtod(value, NULL);
 	#endif
@@ -4723,6 +4736,15 @@ PUGI_IMPL_NS_BEGIN
 	{
 	#ifdef PUGIXML_WCHAR_MODE
 		return static_cast<float>(wcstod(value, NULL));
+	#elif defined(PUGIXML_CHARCONV_FLOAT)
+		while (PUGI_IMPL_IS_CHARTYPE(*value, ct_space))
+			value++;
+		if (*value == '+')
+			value++;
+		// return code is intentionally ignored to let libc++/MSVC STL correctly handle underflow/overflow
+		float result = 0.0f;
+		std::from_chars(value, value + strlen(value), result);
+		return result;
 	#else
 		return static_cast<float>(strtod(value, NULL));
 	#endif
@@ -4800,8 +4822,13 @@ PUGI_IMPL_NS_BEGIN
 	PUGI_IMPL_FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, float value, int precision)
 	{
 		char buf[128];
+	#ifdef PUGIXML_CHARCONV_FLOAT
+		std::to_chars_result result = std::to_chars(buf, buf + sizeof(buf) - 1, value, std::chars_format::general, precision);
+		if (result.ec != std::errc()) return false;
+		*result.ptr = '\0';
+	#else
 		PUGI_IMPL_SNPRINTF(buf, "%.*g", precision, double(value));
-
+	#endif
 		return set_value_ascii(dest, header, header_mask, buf);
 	}
 
@@ -4809,7 +4836,13 @@ PUGI_IMPL_NS_BEGIN
 	PUGI_IMPL_FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, double value, int precision)
 	{
 		char buf[128];
+	#ifdef PUGIXML_CHARCONV_FLOAT
+		std::to_chars_result result = std::to_chars(buf, buf + sizeof(buf) - 1, value, std::chars_format::general, precision);
+		if (result.ec != std::errc()) return false;
+		*result.ptr = '\0';
+	#else
 		PUGI_IMPL_SNPRINTF(buf, "%.*g", precision, value);
+	#endif
 
 		return set_value_ascii(dest, header, header_mask, buf);
 	}
@@ -8933,14 +8966,23 @@ PUGI_IMPL_NS_BEGIN
 #else
 	PUGI_IMPL_FN void convert_number_to_mantissa_exponent(double value, char (&buffer)[32], char** out_mantissa, int* out_exponent)
 	{
+	#ifdef PUGIXML_CHARCONV_FLOAT
+		std::to_chars_result res = std::to_chars(buffer, buffer + sizeof(buffer) - 1, value, std::chars_format::scientific, DBL_DIG);
+		assert(res.ec == std::errc());
+		*res.ptr = '\0';
+	#else
 		// get a scientific notation value with IEEE DBL_DIG decimals
 		PUGI_IMPL_SNPRINTF(buffer, "%.*e", DBL_DIG, value);
-
+	#endif
 		// get the exponent (possibly negative)
 		char* exponent_string = strchr(buffer, 'e');
 		assert(exponent_string);
 
-		int exponent = atoi(exponent_string + 1);
+		char *s = exponent_string + 1;
+		bool isneg = *s++ == '-';
+		int exponent = 0;
+		while (*s) exponent = exponent * 10 + (*s++ - '0');
+		exponent = isneg ? -exponent : exponent;
 
 		// extract mantissa string: skip sign
 		char* mantissa = buffer[0] == '-' ? buffer + 1 : buffer;
@@ -9029,9 +9071,6 @@ PUGI_IMPL_NS_BEGIN
 
 	PUGI_IMPL_FN bool check_string_to_number_format(const char_t* string)
 	{
-		// parse leading whitespace
-		while (PUGI_IMPL_IS_CHARTYPE(*string, ct_space)) ++string;
-
 		// parse sign
 		if (*string == '-') ++string;
 
@@ -9059,12 +9098,20 @@ PUGI_IMPL_NS_BEGIN
 
 	PUGI_IMPL_FN double convert_string_to_number(const char_t* string)
 	{
+		// parse leading whitespace
+		while (PUGI_IMPL_IS_CHARTYPE(*string, ct_space)) ++string;
+
 		// check string format
 		if (!check_string_to_number_format(string)) return gen_nan();
 
 		// parse string
 	#ifdef PUGIXML_WCHAR_MODE
 		return wcstod(string, NULL);
+	#elif defined(PUGIXML_CHARCONV_FLOAT)
+		// return code is intentionally ignored to let libc++/MSVC STL correctly handle underflow/overflow
+		double result = 0.0;
+		std::from_chars(string, string + strlen(string), result);
+		return result;
 	#else
 		return strtod(string, NULL);
 	#endif
@@ -9551,6 +9598,8 @@ PUGI_IMPL_NS_BEGIN
 
 	PUGI_IMPL_FN bool copy_xpath_variable(xpath_variable* lhs, const xpath_variable* rhs)
 	{
+		assert(lhs->type() == rhs->type());
+
 		switch (rhs->type())
 		{
 		case xpath_type_node_set:
@@ -9560,7 +9609,11 @@ PUGI_IMPL_NS_BEGIN
 			return lhs->set(static_cast<const xpath_variable_number*>(rhs)->value);
 
 		case xpath_type_string:
-			return lhs->set(static_cast<const xpath_variable_string*>(rhs)->value);
+		{
+			const char_t* value = static_cast<const xpath_variable_string*>(rhs)->value;
+			assert(!static_cast<xpath_variable_string*>(lhs)->value); // null copy is a no-op
+			return !value || lhs->set(value);
+		}
 
 		case xpath_type_boolean:
 			return lhs->set(static_cast<const xpath_variable_boolean*>(rhs)->value);
